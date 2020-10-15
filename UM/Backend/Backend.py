@@ -84,6 +84,7 @@ class Backend(PluginObject):
                 return
             Logger.log("d", "Engine process is killed. Received return code %s", self._process.wait())
 
+        Logger.log("i", "run engine process command: %s", command)
         self._process = self._runEngineProcess(command)
         if self._process is None:  # Failed to start engine.
             return
@@ -136,6 +137,8 @@ class Backend(PluginObject):
         try:
             # STDIN needs to be None because we provide no input, but communicate via a local socket instead. The NUL device sometimes doesn't exist on some computers.
             # STDOUT and STDERR need to be pipes because we'd like to log the output on those channels into the application log.
+            Logger.log("d", "run engine process with command_list: %s", command_list)
+            Logger.log("d", "run engine process with kwargs: %s", **kwargs)
             return subprocess.Popen(command_list, stdin = None, stdout = subprocess.PIPE, stderr = subprocess.PIPE, **kwargs)
         except PermissionError:
             Logger.log("e", "Couldn't start back-end: No permission to execute process.")
@@ -201,7 +204,7 @@ class Backend(PluginObject):
         """Private message handler"""
 
         message = self._socket.takeNextMessage()
-
+        Logger.log("d", "message: %s", message)
         if message.getTypeName() not in self._message_handlers:
             Logger.log("e", "No handler defined for message of type %s", message.getTypeName())
             return
@@ -238,7 +241,9 @@ class Backend(PluginObject):
             # If the error occurred due to parsing, both connections believe that connection is okay.
             # So we need to force a close.
             self._socket.close()
-
+        
+        Logger.log("d", "create socket.") # temp debug logging
+        Logger.log("d", "protocol_file: %s", protocol_file) # temp debug logging
         self._socket = SignalSocket()
         self._socket.stateChanged.connect(self._onSocketStateChanged)
         self._socket.messageReceived.connect(self._onMessageReceived)
